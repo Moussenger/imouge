@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Imouge example</title>
+    <script src="../dist/imouge.js"></script>
+</head>
+<body>
+    <canvas width="505" height="362" id="original"></canvas>
+    <canvas width="505" height="362" id="work"></canvas>
+
+    <script type="text/javascript">
+        (function () {
+            var canvas, canvas_work, width, height, ctx, ctx_work, img;
+
+            canvas      = document.getElementById("original");
+            canvas_work = document.getElementById("work");
+            width       = canvas.width;
+            height      = canvas.height;
+            ctx         = canvas.getContext("2d");
+            ctx_work    = canvas_work.getContext("2d");
+            img         = new Image();
+
+            img.src         = "platypus.png";
+            img.crossOrigin = "anonymous";
+            img.onload      = function () {
+                var imdata, i, l, r, g, b, graylevel;
+
+                ctx.drawImage(img, 0, 0);
+                imdata = ctx.getImageData(0, 0, width, height);
+
+                var init = new Date();
+                for (i=0, l=imdata.data.length; i<l; i+=4) {
+                    r = imdata.data[i];
+                    g = imdata.data[i+1];
+                    b = imdata.data[i+2];
+
+                    graylevel = imouge.color.brightness.get(r, g, b);
+
+                    imdata.data[i] = imdata.data[i+1] = imdata.data[i+2] = graylevel;
+                }
+
+                console.log("Time: " + (new Date() - init)+"ms");
+                ctx_work.putImageData(imdata, 0, 0);
+            }; 
+        })();
+    </script>
+</body>
+</html>
