@@ -2,15 +2,20 @@
 <html>
 <head>
     <title>Imouge example</title>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.flot.min.js"></script>
     <script src="../dist/imouge.js"></script>
 </head>
 <body>
     <canvas width="505" height="362" id="original"></canvas>
     <canvas width="505" height="362" id="work"></canvas>
+    <h1>Histogram</h1>
+    <div id="histogram" style="width:1000px; height:600px"></div>
 
     <script type="text/javascript">
         (function () {
-            var canvas, canvas_work, width, height, ctx, ctx_work, img;
+            var canvas, canvas_work, width, height, ctx, ctx_work, img,
+                histogram, histogram_plot;
 
             canvas      = document.getElementById("original");
             canvas_work = document.getElementById("work");
@@ -21,14 +26,12 @@
             img         = new Image();
 
             img.src         = "platypus.png";
-            img.crossOrigin = "anonymous";
             img.onload      = function () {
                 var imdata, i, l, r, g, b, graylevel;
 
                 ctx.drawImage(img, 0, 0);
                 imdata = ctx.getImageData(0, 0, width, height);
 
-                var init = new Date();
                 for (i=0, l=imdata.data.length; i<l; i+=4) {
                     r = imdata.data[i];
                     g = imdata.data[i+1];
@@ -39,8 +42,25 @@
                     imdata.data[i] = imdata.data[i+1] = imdata.data[i+2] = graylevel;
                 }
 
-                console.log("Time: " + (new Date() - init)+"ms");
                 ctx_work.putImageData(imdata, 0, 0);
+
+                var init = new Date();
+
+                histogram      = imouge.image.histogram.get(ctx.getImageData(0, 0, width, height).data);
+                histogram_plot = [];
+
+                console.log("Time histogram: " + (new Date() - init)+"ms");
+
+                for(i=0, l=histogram.length; i<l; i++) {
+                    histogram_plot.push([i,histogram[i]]);
+                }
+
+                $.plot("#histogram", [histogram_plot], {
+                    series: {
+                        color     : "#555555",
+                        bars      : {show: true}
+                    }
+                });
             }; 
         })();
     </script>
