@@ -18,7 +18,8 @@ module.exports = function(grunt) {
             dist: {
                 src: [
                     'lib/imouge.js',
-                    'lib/color/*.js'
+                    'lib/color/*.js',
+                    'lib/image/*.js'
                 ],
                 dest: 'dist/imouge.js',
             }
