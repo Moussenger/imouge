@@ -40,22 +40,21 @@ var imouge = {};
         },
 
         getImage : function (image) {
-            var i, l, value;
+            var i, l, value, histimg = [];
 
             for(i=0, l=image.length; i<l; i+=4) {
                 value = obj.color.brightness.get(image[i], image[i+1], image[i+2]);
-                image[i] = image[i+1] = image[i+2] = value;
+                histimg[i] = histimg[i+1] = histimg[i+2] = value;
+                histimg[i+3] = image[i+3];
             }
 
-            return image;
+            return histimg;
         },
 
         modify : function (brightnessImage, fn) {
-            brightnessImage.map(function (v) {
+            return brightnessImage.map(function (v) {
                 return Math.round(fn(v));
             });
-
-            return brightnessImage;
         }
     }
 })(imouge);
