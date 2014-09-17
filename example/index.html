@@ -11,6 +11,9 @@
     <canvas width="505" height="362" id="work"></canvas>
     <h1>Histogram</h1>
     <div id="histogram" style="width:1000px; height:600px"></div>
+    <h1>Logaritmic Histogram</h1>
+    <div id="log_histogram" style="width:1000px; height:600px"></div>
+
 
     <script type="text/javascript">
         (function () {
@@ -32,16 +35,7 @@
                 ctx.drawImage(img, 0, 0);
                 imdata = ctx.getImageData(0, 0, width, height);
 
-                for (i=0, l=imdata.data.length; i<l; i+=4) {
-                    r = imdata.data[i];
-                    g = imdata.data[i+1];
-                    b = imdata.data[i+2];
-
-                    graylevel = imouge.color.brightness.get(r, g, b);
-
-                    imdata.data[i] = imdata.data[i+1] = imdata.data[i+2] = graylevel;
-                }
-
+                imdata.data = imouge.image.histogram.getImage(imdata.data);
                 ctx_work.putImageData(imdata, 0, 0);
 
                 var init = new Date();
@@ -61,6 +55,23 @@
                         bars      : {show: true}
                     }
                 });
+
+                /*var hl = [];
+                for(i=0, l=256; i<l; i++) {
+                    var val = Math.log(i)*(255/Math.log(255));
+                    val--;
+                    val = val < 0 ? 0 : val;
+                    console.log(val);
+                    hl.push([i,val]);
+                }*/
+
+                var hl = imouge.image.histogram.modify(histogram, function (v) {
+                    return Math.log(i)
+                });
+
+                console.log(hl);
+
+                $.plot("#log_histogram", [hl]);
             }; 
         })();
     </script>
