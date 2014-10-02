@@ -19,6 +19,30 @@ var imouge = {};
     }
 })(imouge);
 (function (obj) {
+    var _i, _calc;
+
+    _i = obj.image = obj.image || {};
+
+    _calc = function (region, matrix, fn, options) {
+        
+    };
+
+    _i.convolution = {
+        apply : function (brightnessImage, matrix, fn, options) {
+            var result, region, i, l, value;
+
+            result = new Array();
+
+            for(i=0, l=image.length; i < l; i+=4) {
+                value = obj.color.brightness.get(image[i], image[i+1], image[i+2]);
+                histogram[value]++;
+            }
+
+            return histogram;
+        },
+    }
+})(imouge);
+(function (obj) {
     var _i;
 
     _i = obj.image = obj.image || {};
