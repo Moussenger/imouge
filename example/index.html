@@ -1,79 +1,271 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Imouge example</title>
     <script src="js/jquery.min.js"></script>
     <script src="js/jquery.flot.min.js"></script>
     <script src="../dist/imouge.js"></script>
+    <script>"use strict"; var FNS = []</script>
 </head>
 <body>
+
+    <!-- Original Image -->
+
+    <h1>Original</h1>
     <canvas width="505" height="362" id="original"></canvas>
+    <script>
+        $(function () {
+            var canvas, ctx, width, height, img, data, loadfn;
+
+            loadfn = function () {
+                ctx.drawImage(img, 0, 0);
+                data = ctx.getImageData(0, 0, width, height);
+
+                FNS.forEach(function (fn) {
+                    return fn && typeof fn === "function" ? 
+                        fn($.extend(true, {}, data)) : undefined;
+                });
+            }
+
+            canvas     = $("#original")[0];
+            width      = canvas.width;
+            height     = canvas.height;
+            ctx        = canvas.getContext("2d");
+            img        = new Image();
+            img.src    = "platypus.png";
+            img.onload = loadfn; 
+        });
+    </script>
+
+    <!-- GrayScale -->
+
+    <h1>GrayScale</h1>
     <canvas width="505" height="362" id="work"></canvas>
-    <h1>Histogram</h1>
-    <div id="histogram" style="width:1000px; height:600px"></div>
-    <h1>Logaritmic Histogram</h1>
-    <div id="log_histogram" style="width:1000px; height:600px"></div>
+    <script>
+        FNS.push(function (ordata) {
+            var canvas, ctx, width, height, imdata;
 
-
-    <script type="text/javascript">
-        (function () {
-            var canvas, canvas_work, width, height, ctx, ctx_work, img,
-                histogram, histogram_plot;
-
-            canvas      = document.getElementById("original");
-            canvas_work = document.getElementById("work");
+            canvas      = $("#work")[0];
+            ctx         = canvas.getContext("2d");
             width       = canvas.width;
             height      = canvas.height;
+            imdata      = ctx.createImageData(width, height);
+            
+            imdata.data.set(imouge.image.histogram.getImage(ordata.data));
+            ctx.putImageData(imdata, 0, 0);
+        });
+    </script>
+
+    <!-- Histogram -->
+
+    <h1>Histogram</h1>
+    <div id="histogram" style="width:1000px; height:600px"></div>
+    <script>
+        FNS.push(function (ordata) {
+            var histogram, histogram_plot, i, l;
+
+            histogram      = imouge.image.histogram.get(ordata.data);
+            histogram_plot = [];
+
+            for(i=0, l=histogram.length; i<l; i++) {
+                histogram_plot.push([i,histogram[i]]);
+            }
+
+            $.plot("#histogram", [histogram_plot], {
+                series: {
+                    color     : "#555555",
+                    bars      : {show: true}
+                }
+            });
+        });
+    </script>
+
+    <!-- Logarithmic Correction Histogram Image -->
+
+    <h1>Logarithmic Correction Histogram Image</h1>
+    <canvas id="log_image" width="505" height="362"></canvas>
+    <script>
+        FNS.push(function (ordata) {
+            var canvas, ctx, width, height, imdata, grayImage, baselog, logfn;
+
+            baselog = function (v, b) { return Math.log(v) / Math.log(b); };
+
+            logfn = function (v) {
+                var b = Math.pow(255, 1/255);
+
+                return v ? baselog(v, b) : v;
+            };
+
+            canvas    = $("#log_image")[0];
+            ctx       = canvas.getContext("2d");
+            width     = canvas.width;
+            height    = canvas.height;
+            imdata    = ctx.createImageData(width, height);
+            grayImage = imouge.image.histogram.getImage(ordata.data);
+
+            imdata.data.set(imouge.image.histogram.modify(grayImage, logfn));
+
+            ctx.putImageData(imdata, 0, 0);
+        
+        });
+    </script>
+
+    <!-- Logarithmic Correction Histogram -->
+
+    <h1>Logarithmic Correction Histogram</h1>
+    <div id="log_histogram" style="width:1000px; height:600px"></div>
+    <script>
+        FNS.push(function (ordata) {
+            var grayImage, histogram, histogram_plot, logplot, baselog, logfn, i, l;
+
+            baselog = function (v, b) { return Math.log(v) / Math.log(b); };
+
+            logfn = function (v) {
+                var b = Math.pow(255, 1/255);
+
+                return v ? baselog(v, b) : v;
+            };
+
+            grayImage = imouge.image.histogram.getImage(ordata.data);
+            grayImage = imouge.image.histogram.modify(grayImage, logfn);
+            histogram = imouge.image.histogram.get(grayImage);
+
+            histogram_plot = [];
+            logplot        = [];
+
+            for(i=0, l=histogram.length; i<l; i++) {
+                histogram_plot.push([i,histogram[i]]);
+            }
+
+            for(i=0, l=256; i<l; i++) {
+                logplot.push([i, Math.round(logfn(i))]);
+            }
+
+            $.plot("#log_histogram", [{
+                data  : histogram_plot,
+                color : "#555555",
+                bars  : {show: true}
+            }, {
+                data  : logplot,
+                yaxis : 2 
+            }], {
+                yaxes: [
+                    { min : 0 },
+                    { position: "right"}
+                ]
+            });
+        });
+    </script>
+
+    <!-- Exponential Correction Histogram Image -->
+
+    <h1>Exponential Correction Histogram Image</h1>
+    <canvas id="exp_image" width="505" height="362"></canvas>
+    <script>
+        FNS.push(function (ordata) {
+            var canvas, ctx, width, height, imdata, grayImage, expfn;
+
+            expfn = function (v) {
+                return Math.pow(Math.pow(255,1/255), v);
+            };
+
+            canvas    = $("#exp_image")[0];
+            ctx       = canvas.getContext("2d");
+            width     = canvas.width;
+            height    = canvas.height;
+            imdata    = ctx.createImageData(width, height);
+            grayImage = imouge.image.histogram.getImage(ordata.data);
+
+            imdata.data.set(imouge.image.histogram.modify(grayImage, expfn));
+
+            ctx.putImageData(imdata, 0, 0);
+        
+        });
+    </script>
+
+    <!-- Exponential Correction Histogram -->
+
+    <h1>Exponential Correction Histogram</h1>
+    <div id="exp_histogram" style="width:1000px; height:600px"></div>
+    <script>
+        FNS.push(function (ordata) {
+            var grayImage, histogram, histogram_plot, logplot,expfn, i, l;
+
+            expfn = function (v) {
+                return Math.pow(Math.pow(255,1/255), v);
+            };
+
+            grayImage = imouge.image.histogram.getImage(ordata.data);
+            grayImage = imouge.image.histogram.modify(grayImage, expfn);
+            histogram = imouge.image.histogram.get(grayImage);
+
+            histogram_plot = [];
+            logplot        = [];
+
+            for(i=0, l=histogram.length; i<l; i++) {
+                histogram_plot.push([i,histogram[i]]);
+            }
+
+            for(i=0, l=256; i<l; i++) {
+                logplot.push([i, Math.round(expfn(i))]);
+            }
+
+            $.plot("#exp_histogram", [{
+                data  : histogram_plot,
+                color : "#555555",
+                bars  : {show: true}
+            }, {
+                data  : logplot,
+                yaxis : 2 
+            }], {
+                yaxes: [
+                    { min : 0 },
+                    { position: "right"}
+                ]
+            });
+        });
+    </script>
+
+    <!-- Convolution -->
+
+    <h1>Convolution</h1>
+    <canvas width="505" height="362" id="conv_image"></canvas>
+    <script>
+        FNS.push(function (ordata) {
+            var canvas, ctx, width, height, imdata, brim, filterim, matrix, unityfn;
+
+            unityfn = function (v) {  return v; };
+
+            canvas      = $("#conv_image")[0];
             ctx         = canvas.getContext("2d");
-            ctx_work    = canvas_work.getContext("2d");
-            img         = new Image();
+            width       = canvas.width;
+            height      = canvas.height;
+            imdata      = ctx.createImageData(width, height);
 
-            img.src         = "platypus.png";
-            img.onload      = function () {
-                var imdata, i, l, r, g, b, graylevel;
+            matrix = [[1, 1, 1], [1, 1, 1], [1, 1, 1]];
 
-                ctx.drawImage(img, 0, 0);
-                imdata = ctx.getImageData(0, 0, width, height);
+            brim = imouge.image.histogram.getImage(ordata.data);
+            
+            filterim = imouge.image.convolution.filter(brim, width, matrix, function (m, r, o) {
+                var i, j, li, lj, val;
 
-                imdata.data = imouge.image.histogram.getImage(imdata.data);
-                ctx_work.putImageData(imdata, 0, 0);
+                val = 0;
 
-                var init = new Date();
-
-                histogram      = imouge.image.histogram.get(ctx.getImageData(0, 0, width, height).data);
-                histogram_plot = [];
-
-                console.log("Time histogram: " + (new Date() - init)+"ms");
-
-                for(i=0, l=histogram.length; i<l; i++) {
-                    histogram_plot.push([i,histogram[i]]);
+                for (i=0, li=m.length; i < li; i++) {
+                    for (j=0, lj=m.length; j<lj; j++) {
+                        val += m[i][j] * r[i][j];
+                    }
                 }
 
-                $.plot("#histogram", [histogram_plot], {
-                    series: {
-                        color     : "#555555",
-                        bars      : {show: true}
-                    }
-                });
+                return val;
+            },{});
 
-                /*var hl = [];
-                for(i=0, l=256; i<l; i++) {
-                    var val = Math.log(i)*(255/Math.log(255));
-                    val--;
-                    val = val < 0 ? 0 : val;
-                    console.log(val);
-                    hl.push([i,val]);
-                }*/
 
-                var hl = imouge.image.histogram.modify(histogram, function (v) {
-                    return Math.log(i)
-                });
-
-                console.log(hl);
-
-                $.plot("#log_histogram", [hl]);
-            }; 
-        })();
+            filterim = imouge.image.histogram.normalize(filterim)
+            imdata.data.set(imouge.image.histogram.modify(filterim, unityfn));
+            ctx.putImageData(imdata, 0, 0);
+        });
     </script>
 </body>
 </html>
