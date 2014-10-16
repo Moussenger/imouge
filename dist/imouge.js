@@ -19,7 +19,7 @@ var imouge = {};
     }
 })(imouge);
 (function (obj) {
-    var _i, _calc, _fixRegion, _getRegion;
+    var _i, _calc, _fixRegion, _getRegion, _getGrayMatrix, _expandGrayMatrix;
 
     _i = obj.image = obj.image || {};
 
@@ -33,10 +33,11 @@ var imouge = {};
             region[i+offset] = new Array();
             
             for(j = -offset, lj = offset; j <= lj; j++) {
-                region[i+offset][j+offset] = image[pos + (iwidth*i +j)] || undefined;
+                region[i+offset][j+offset] = image[pos + (iwidth*i + j)] || undefined;
             }
         }
 
+        if(pos == 0) console.log(region);
         return region;
 
     };
@@ -61,18 +62,48 @@ var imouge = {};
         return fn(matrix, region, options.calc);
     };
 
+    _getGrayMatrix = function (brightnessImage) {
+        var grayMatrix, i, l;
+
+        grayMatrix = [];
+
+        for(i=0, l=brightnessImage.length; i<l; i+=4) {
+            grayMatrix.push(brightnessImage[i]);
+        }
+
+        return grayMatrix;
+    };
+
+    _expandGrayMatrix = function (grayMatrix) {
+        var brightnessImage, i, j, l;
+
+        brightnessImage = [];
+
+        for(i=0, l=grayMatrix.length; i<l; i++) {
+            for(j=0; j<4; j++){
+                brightnessImage.push(grayMatrix[i]);
+            }
+        }
+
+        return brightnessImage;
+    };
+
+
     _i.convolution = {
         filter : function (brightnessImage, iwidth, matrix, fn, options) {
-            var result, region, i, l, offset;
+            var grayMatrix, result, region, i, l, offset;
+
+            grayMatrix = _getGrayMatrix(brightnessImage);
 
             result = new Array();
             offset = Math.floor(matrix.length / 2);
 
-            for(i=0, l=brightnessImage.length; i < l; i++) {
-                region    = _getRegion(brightnessImage, iwidth, i, offset);
+            for(i=0, l=grayMatrix.length; i < l; i++) {
+                region    = _getRegion(grayMatrix, iwidth, i, offset);
                 result[i] = _calc(region, matrix, fn, options);
             }
 
+            result = _expandGrayMatrix(result);
             return result;
         },
     }
@@ -149,6 +180,20 @@ var imouge = {};
 
             return norim;
 
-        }
+        },
+
+        cut : function (brightnessImage) {
+            var cutimage, i, li, value;
+
+            cutimage = [];
+
+            for (i=0, li = brightnessImage.length; i < li; i++) {
+                value = brightnessImage[i];
+                value = value > 255 ? 255 : (value < 0 ? 0 : value);
+            };
+
+            return brightnessImage;
+
+        },
     }
 })(imouge);
